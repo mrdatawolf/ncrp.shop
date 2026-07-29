@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npx prisma *)",
+      "Bash(mkdir -p prisma/migrations/00000000000000_init)"
+    ]
+  }
+}

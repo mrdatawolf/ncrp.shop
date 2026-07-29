@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum PullListStatus {
+  REQUESTED
+  ORDERED
+  ARRIVED
+  PICKED_UP
+  CANCELED
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String
+  role               UserRole
+  mustChangePassword Boolean   @default(true)
+  isActive           Boolean   @default(true)
+  name               String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  customer     Customer?
+  createdItems PullListItem[] @relation("createdBy")
+  updatedItems PullListItem[] @relation("updatedBy")
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  userId      String?  @unique
+  displayName String
+  phone       String?
+  staffNotes  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User?          @relation(fields: [userId], references: [id])
+  pullListItems PullListItem[]
+}
+
+model PullListItem {
+  id               String         @id @default(cuid())
+  customerId       String
+  title            String
+  issueInfo        String?
+  status           PullListStatus @default(REQUESTED)
+  internalNotes    String?
+  customerNote     String?
+  createdByStaffId String
+  updatedByStaffId String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  customer  Customer @relation(fields: [customerId], references: [id])
+  createdBy User     @relation("createdBy", fields: [createdByStaffId], references: [id])
+  updatedBy User     @relation("updatedBy", fields: [updatedByStaffId], references: [id])
+}
