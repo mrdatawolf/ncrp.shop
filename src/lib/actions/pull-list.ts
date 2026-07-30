@@ -13,7 +13,7 @@ const AddItemSchema = z.object({
   issueInfo: z.string().optional(),
 });
 
-export type AddItemState = { error?: string } | undefined;
+export type AddItemState = { error: string } | { success: true } | undefined;
 
 export async function addPullListItem(
   _prevState: AddItemState,
@@ -41,6 +41,8 @@ export async function addPullListItem(
   });
 
   revalidatePath(`/staff/customers/${parsed.data.customerId}`);
+  revalidatePath("/staff/pull-list");
+  return { success: true };
 }
 
 const UpdateItemSchema = z.object({
@@ -81,4 +83,5 @@ export async function updatePullListItem(
   });
 
   revalidatePath(`/staff/customers/${parsed.data.customerId}`);
+  revalidatePath("/staff/pull-list");
 }

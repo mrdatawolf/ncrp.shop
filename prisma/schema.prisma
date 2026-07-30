@@ -35,6 +35,9 @@ model User {
   customer     Customer?
   createdItems PullListItem[] @relation("createdBy")
   updatedItems PullListItem[] @relation("updatedBy")
+
+  uploadedInvoices     VendorInvoice[]             @relation("uploadedInvoices")
+  confirmedAllocations InvoiceLineItemAllocation[] @relation("confirmedAllocations")
 }
 
 model Customer {
@@ -66,4 +69,59 @@ model PullListItem {
   customer  Customer @relation(fields: [customerId], references: [id])
   createdBy User     @relation("createdBy", fields: [createdByStaffId], references: [id])
   updatedBy User     @relation("updatedBy", fields: [updatedByStaffId], references: [id])
+
+  invoiceAllocations InvoiceLineItemAllocation[]
+}
+
+model VendorInvoice {
+  id                String    @id @default(cuid())
+  vendorName        String
+  invoiceNumber     String
+  invoiceDate       DateTime?
+  orderNumber       String?
+  subtotal          Decimal?  @db.Decimal(10, 2)
+  total             Decimal?  @db.Decimal(10, 2)
+  sourceText        String    @db.Text
+  uploadedByStaffId String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  uploadedBy User                    @relation("uploadedInvoices", fields: [uploadedByStaffId], references: [id])
+  lineItems  VendorInvoiceLineItem[]
+
+  @@unique([vendorName, invoiceNumber])
+}
+
+model VendorInvoiceLineItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  sku         String?
+  description String
+  gtin        String?
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  lineAmount  Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+
+  invoice     VendorInvoice               @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  allocations InvoiceLineItemAllocation[]
+
+  @@index([invoiceId])
+}
+
+model InvoiceLineItemAllocation {
+  id                 String         @id @default(cuid())
+  lineItemId         String
+  pullListItemId     String
+  quantity           Int
+  resultingStatus    PullListStatus
+  confirmedByStaffId String
+  confirmedAt        DateTime       @default(now())
+
+  lineItem     VendorInvoiceLineItem @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+  pullListItem PullListItem          @relation(fields: [pullListItemId], references: [id])
+  confirmedBy  User                  @relation("confirmedAllocations", fields: [confirmedByStaffId], references: [id])
+
+  @@index([lineItemId])
+  @@index([pullListItemId])
 }
