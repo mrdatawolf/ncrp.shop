@@ -58,7 +58,11 @@ export function NewPullListItemForm({
         <form action={action} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="customerId">Customer</Label>
-            <Select name="customerId" required>
+            <Select
+              name="customerId"
+              required
+              items={Object.fromEntries(customers.map((c) => [c.id, c.displayName]))}
+            >
               <SelectTrigger id="customerId" className="w-full">
                 <SelectValue placeholder="Choose a customer" />
               </SelectTrigger>

@@ -80,7 +80,11 @@ export function PullListItemRow({
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor={`status-${item.id}`}>Status</Label>
-              <Select name="status" defaultValue={item.status}>
+              <Select
+                name="status"
+                defaultValue={item.status}
+                items={Object.fromEntries(STATUS_OPTIONS.map((s) => [s, s.replace("_", " ")]))}
+              >
                 <SelectTrigger id={`status-${item.id}`} className="w-40">
                   <SelectValue />
                 </SelectTrigger>
