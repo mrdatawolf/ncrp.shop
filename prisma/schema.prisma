@@ -38,6 +38,7 @@ model User {
 
   uploadedInvoices     VendorInvoice[]             @relation("uploadedInvoices")
   confirmedAllocations InvoiceLineItemAllocation[] @relation("confirmedAllocations")
+  receivingScans       InvoiceReceivingScan[]
 }
 
 model Customer {
@@ -88,6 +89,7 @@ model VendorInvoice {
 
   uploadedBy User                    @relation("uploadedInvoices", fields: [uploadedByStaffId], references: [id])
   lineItems  VendorInvoiceLineItem[]
+  receivingScans InvoiceReceivingScan[]
 
   @@unique([vendorName, invoiceNumber])
 }
@@ -105,6 +107,7 @@ model VendorInvoiceLineItem {
 
   invoice     VendorInvoice               @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   allocations InvoiceLineItemAllocation[]
+  scans       InvoiceReceivingScan[]
 
   @@index([invoiceId])
 }
@@ -124,4 +127,20 @@ model InvoiceLineItemAllocation {
 
   @@index([lineItemId])
   @@index([pullListItemId])
+}
+
+model InvoiceReceivingScan {
+  id                String   @id @default(cuid())
+  invoiceId         String
+  lineItemId        String?
+  scannedCode       String
+  scannedByStaffId  String
+  scannedAt         DateTime @default(now())
+
+  invoice    VendorInvoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  lineItem   VendorInvoiceLineItem? @relation(fields: [lineItemId], references: [id], onDelete: SetNull)
+  scannedBy  User                   @relation(fields: [scannedByStaffId], references: [id])
+
+  @@index([invoiceId])
+  @@index([lineItemId])
 }

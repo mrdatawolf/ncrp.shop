@@ -8,6 +8,7 @@ import { requireStaff } from "@/lib/dal";
 import { extractPdfText } from "@/lib/pdf";
 import { parseVendorInvoice, InvoiceExtractionSchema, type InvoiceExtraction } from "@/lib/llm";
 import { isLlmEnabled } from "@/lib/feature-flags";
+import { normalizeGtin } from "@/lib/barcode";
 
 const PULL_LIST_STATUSES = ["REQUESTED", "ORDERED", "ARRIVED", "PICKED_UP", "CANCELED"] as const;
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -301,4 +302,132 @@ export async function removeInvoiceAllocation(
   await prisma.invoiceLineItemAllocation.delete({ where: { id: parsed.data.allocationId } });
 
   revalidatePath(`/staff/invoices/${parsed.data.invoiceId}`);
+}
+
+const RecordScanSchema = z.object({
+  invoiceId: z.string().min(1),
+  code: z.string().min(1),
+});
+
+export type RecordScanState =
+  | { error: string }
+  | {
+      success: true;
+      scanId: string;
+      code: string;
+      matched: boolean;
+      description?: string;
+      receivedQuantity?: number;
+      orderedQuantity?: number;
+    }
+  | undefined;
+
+export async function recordReceivingScan(
+  _prevState: RecordScanState,
+  formData: FormData
+): Promise<RecordScanState> {
+  const staff = await requireStaff();
+  if (!isLlmEnabled()) return { error: FEATURE_DISABLED_ERROR };
+
+  const parsed = RecordScanSchema.safeParse({
+    invoiceId: formData.get("invoiceId"),
+    code: formData.get("code"),
+  });
+  if (!parsed.success) {
+    return { error: "Invalid scan." };
+  }
+
+  const lineItems = await prisma.vendorInvoiceLineItem.findMany({
+    where: { invoiceId: parsed.data.invoiceId },
+    include: { _count: { select: { scans: true } } },
+  });
+
+  const normalizedScan = normalizeGtin(parsed.data.code);
+  const matchedLineItem = normalizedScan
+    ? lineItems.find((li) => li.gtin && normalizeGtin(li.gtin) === normalizedScan)
+    : undefined;
+
+  const scan = await prisma.invoiceReceivingScan.create({
+    data: {
+      invoiceId: parsed.data.invoiceId,
+      lineItemId: matchedLineItem?.id ?? null,
+      scannedCode: parsed.data.code,
+      scannedByStaffId: staff.userId,
+    },
+  });
+
+  revalidatePath(`/staff/invoices/${parsed.data.invoiceId}/receive`);
+
+  if (!matchedLineItem) {
+    return { success: true, scanId: scan.id, code: parsed.data.code, matched: false };
+  }
+
+  return {
+    success: true,
+    scanId: scan.id,
+    code: parsed.data.code,
+    matched: true,
+    description: matchedLineItem.description,
+    receivedQuantity: matchedLineItem._count.scans + 1,
+    orderedQuantity: matchedLineItem.quantity,
+  };
+}
+
+const UndoScanSchema = z.object({
+  invoiceId: z.string().min(1),
+  scanId: z.string().min(1),
+});
+
+export type UndoScanState = { error?: string } | undefined;
+
+export async function undoReceivingScan(
+  _prevState: UndoScanState,
+  formData: FormData
+): Promise<UndoScanState> {
+  await requireStaff();
+  if (!isLlmEnabled()) return { error: FEATURE_DISABLED_ERROR };
+
+  const parsed = UndoScanSchema.safeParse({
+    invoiceId: formData.get("invoiceId"),
+    scanId: formData.get("scanId"),
+  });
+  if (!parsed.success) {
+    return { error: "Invalid request." };
+  }
+
+  await prisma.invoiceReceivingScan.delete({ where: { id: parsed.data.scanId } });
+
+  revalidatePath(`/staff/invoices/${parsed.data.invoiceId}/receive`);
+}
+
+const AssignScanSchema = z.object({
+  invoiceId: z.string().min(1),
+  scanId: z.string().min(1),
+  lineItemId: z.string().min(1),
+});
+
+export type AssignScanState = { error?: string } | undefined;
+
+export async function assignReceivingScan(
+  _prevState: AssignScanState,
+  formData: FormData
+): Promise<AssignScanState> {
+  await requireStaff();
+  if (!isLlmEnabled()) return { error: FEATURE_DISABLED_ERROR };
+
+  const parsed = AssignScanSchema.safeParse({
+    invoiceId: formData.get("invoiceId"),
+    scanId: formData.get("scanId"),
+    lineItemId: formData.get("lineItemId"),
+  });
+  if (!parsed.success) {
+    return { error: "Invalid request." };
+  }
+
+  await prisma.invoiceReceivingScan.update({
+    where: { id: parsed.data.scanId },
+    data: { lineItemId: parsed.data.lineItemId },
+  });
+
+  revalidatePath(`/staff/invoices/${parsed.data.invoiceId}/receive`);
 }
