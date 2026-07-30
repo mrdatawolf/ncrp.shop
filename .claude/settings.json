@@ -3,7 +3,9 @@
     "allow": [
       "WebSearch",
       "Bash(npx prisma *)",
-      "Bash(mkdir -p prisma/migrations/00000000000000_init)"
+      "Bash(mkdir -p prisma/migrations/00000000000000_init)",
+      "Bash(npm run *)",
+      "Bash(netstat -ano)"
     ]
   }
 }

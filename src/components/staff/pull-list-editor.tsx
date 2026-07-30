@@ -41,7 +41,9 @@ export function AddPullListItemForm({ customerId }: { customerId: string }) {
         <Label htmlFor="issueInfo">Issue / details</Label>
         <Input id="issueInfo" name="issueInfo" className="w-48" />
       </div>
-      {state?.error && <p className="text-destructive text-sm">{state.error}</p>}
+      {state && "error" in state && (
+        <p className="text-destructive text-sm">{state.error}</p>
+      )}
       <Button type="submit" disabled={pending}>
         {pending ? "Adding..." : "Add Item"}
       </Button>

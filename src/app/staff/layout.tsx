@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/dal";
 import { logout } from "@/lib/actions/auth";
+import { isLlmEnabled } from "@/lib/feature-flags";
 import { Button } from "@/components/ui/button";
 
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +17,14 @@ export default async function StaffLayout({ children }: { children: React.ReactN
           <Link href="/staff/customers" className="text-sm font-medium hover:underline">
             Customers
           </Link>
+          <Link href="/staff/pull-list" className="text-sm font-medium hover:underline">
+            Pull List
+          </Link>
+          {isLlmEnabled() && (
+            <Link href="/staff/invoices" className="text-sm font-medium hover:underline">
+              Invoices
+            </Link>
+          )}
           {user.role === "ADMIN" && (
             <Link href="/staff/staff-accounts" className="text-sm font-medium hover:underline">
               Staff Accounts
