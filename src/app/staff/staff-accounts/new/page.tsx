@@ -65,7 +65,11 @@ export default function NewStaffAccountPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="role">Role</Label>
-              <Select name="role" defaultValue="STAFF">
+              <Select
+                name="role"
+                defaultValue="STAFF"
+                items={{ STAFF: "Staff", ADMIN: "Admin" }}
+              >
                 <SelectTrigger id="role" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

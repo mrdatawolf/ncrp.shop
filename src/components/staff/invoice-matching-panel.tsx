@@ -126,7 +126,16 @@ function LineItemMatchRow({
 
             <div className="flex flex-col gap-2">
               <Label htmlFor={`candidate-${item.id}`}>Match to</Label>
-              <Select name="pullListItemAndCustomer" required>
+              <Select
+                name="pullListItemAndCustomer"
+                required
+                items={Object.fromEntries(
+                  item.candidates.map((c) => [
+                    `${c.id}|${c.customerId}`,
+                    `${c.customerName} — ${c.title}${c.issueInfo ? ` (${c.issueInfo})` : ""} · ${Math.round(c.score * 100)}%`,
+                  ])
+                )}
+              >
                 <SelectTrigger id={`candidate-${item.id}`} className="w-72">
                   <SelectValue placeholder="Choose a pull-list item" />
                 </SelectTrigger>
@@ -156,7 +165,11 @@ function LineItemMatchRow({
 
             <div className="flex flex-col gap-2">
               <Label htmlFor={`status-${item.id}`}>Sets status to</Label>
-              <Select name="resultingStatus" defaultValue="ARRIVED">
+              <Select
+                name="resultingStatus"
+                defaultValue="ARRIVED"
+                items={Object.fromEntries(STATUS_OPTIONS.map((s) => [s, s.replace("_", " ")]))}
+              >
                 <SelectTrigger id={`status-${item.id}`} className="w-36">
                   <SelectValue />
                 </SelectTrigger>
@@ -229,7 +242,11 @@ function CreatePullListItemForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={`new-customer-${lineItemId}`}>Customer</Label>
-        <Select name="customerId" required>
+        <Select
+          name="customerId"
+          required
+          items={Object.fromEntries(customers.map((c) => [c.id, c.displayName]))}
+        >
           <SelectTrigger id={`new-customer-${lineItemId}`} className="w-48">
             <SelectValue placeholder="Choose a customer" />
           </SelectTrigger>
@@ -268,7 +285,11 @@ function CreatePullListItemForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={`new-status-${lineItemId}`}>Sets status to</Label>
-        <Select name="resultingStatus" defaultValue="ARRIVED">
+        <Select
+          name="resultingStatus"
+          defaultValue="ARRIVED"
+          items={Object.fromEntries(STATUS_OPTIONS.map((s) => [s, s.replace("_", " ")]))}
+        >
           <SelectTrigger id={`new-status-${lineItemId}`} className="w-36">
             <SelectValue />
           </SelectTrigger>

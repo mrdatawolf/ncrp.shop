@@ -28,7 +28,11 @@ export function PullListQuickStatus({
     <form action={action} className="flex items-center gap-2">
       <input type="hidden" name="itemId" value={itemId} />
       <input type="hidden" name="customerId" value={customerId} />
-      <Select name="status" defaultValue={status}>
+      <Select
+        name="status"
+        defaultValue={status}
+        items={Object.fromEntries(STATUS_OPTIONS.map((s) => [s, s.replace("_", " ")]))}
+      >
         <SelectTrigger className="w-36">
           <SelectValue />
         </SelectTrigger>
