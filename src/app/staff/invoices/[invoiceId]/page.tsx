@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { rankCandidates } from "@/lib/invoice-matching";
@@ -7,6 +8,7 @@ import {
   type LineItemView,
 } from "@/components/staff/invoice-matching-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default async function InvoiceDetailPage({
   params,
@@ -77,13 +79,18 @@ export default async function InvoiceDetailPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-heading text-3xl tracking-wide">{invoice.vendorName}</h1>
-        <p className="text-muted-foreground text-sm">
-          Invoice {invoice.invoiceNumber}
-          {invoice.invoiceDate && ` · ${invoice.invoiceDate.toLocaleDateString()}`}
-          {invoice.orderNumber && ` · Order ${invoice.orderNumber}`}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-3xl tracking-wide">{invoice.vendorName}</h1>
+          <p className="text-muted-foreground text-sm">
+            Invoice {invoice.invoiceNumber}
+            {invoice.invoiceDate && ` · ${invoice.invoiceDate.toLocaleDateString()}`}
+            {invoice.orderNumber && ` · Order ${invoice.orderNumber}`}
+          </p>
+        </div>
+        <Button render={<Link href={`/staff/invoices/${invoice.id}/receive`} />} nativeButton={false}>
+          Receive Shipment
+        </Button>
       </div>
 
       <Card className="w-fit">

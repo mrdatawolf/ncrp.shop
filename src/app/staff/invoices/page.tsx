@@ -39,6 +39,7 @@ export default async function InvoicesPage() {
             <TableHead>Date</TableHead>
             <TableHead>Total</TableHead>
             <TableHead>Matched</TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -66,12 +67,20 @@ export default async function InvoicesPage() {
                 <TableCell>
                   {matchedUnits} of {totalUnits} units
                 </TableCell>
+                <TableCell>
+                  <Link
+                    href={`/staff/invoices/${invoice.id}/receive`}
+                    className="text-sm hover:underline"
+                  >
+                    Receive &rarr;
+                  </Link>
+                </TableCell>
               </TableRow>
             );
           })}
           {invoices.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="text-muted-foreground text-center">
+              <TableCell colSpan={6} className="text-muted-foreground text-center">
                 No invoices uploaded yet.
               </TableCell>
             </TableRow>
