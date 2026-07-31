@@ -8,7 +8,7 @@ import { requireStaff } from "@/lib/dal";
 import { extractPdfText } from "@/lib/pdf";
 import { parseVendorInvoice, InvoiceExtractionSchema, type InvoiceExtraction } from "@/lib/llm";
 import { isLlmEnabled } from "@/lib/feature-flags";
-import { normalizeGtin } from "@/lib/barcode";
+import { parseGtin, matchGtins } from "@/lib/barcode";
 
 const PULL_LIST_STATUSES = ["REQUESTED", "ORDERED", "ARRIVED", "PICKED_UP", "CANCELED"] as const;
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -342,10 +342,25 @@ export async function recordReceivingScan(
     include: { _count: { select: { scans: true } } },
   });
 
-  const normalizedScan = normalizeGtin(parsed.data.code);
-  const matchedLineItem = normalizedScan
-    ? lineItems.find((li) => li.gtin && normalizeGtin(li.gtin) === normalizedScan)
-    : undefined;
+  const scannedGtin = parseGtin(parsed.data.code);
+  const parsedLineItems = lineItems
+    .map((li) => ({ li, gtin: li.gtin ? parseGtin(li.gtin) : null }))
+    .filter((x): x is { li: (typeof lineItems)[number]; gtin: NonNullable<typeof x.gtin> } => x.gtin !== null);
+
+  let matchedLineItem: (typeof lineItems)[number] | undefined;
+  if (scannedGtin) {
+    const exact = parsedLineItems.find((x) => matchGtins(scannedGtin, x.gtin) === "exact");
+    if (exact) {
+      matchedLineItem = exact.li;
+    } else {
+      // No add-on (issue/variant/printing) on one or both sides — only trust
+      // a same-title match if it's the sole candidate on this invoice.
+      const primaryOnly = parsedLineItems.filter(
+        (x) => matchGtins(scannedGtin, x.gtin) === "primary-only"
+      );
+      if (primaryOnly.length === 1) matchedLineItem = primaryOnly[0].li;
+    }
+  }
 
   const scan = await prisma.invoiceReceivingScan.create({
     data: {
